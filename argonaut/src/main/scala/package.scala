@@ -6,7 +6,7 @@ import java.util.Date
 import argonaut._, Argonaut._
 
 package object json {
-  private def jsonDate = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss'Z'")
+  private def jsonDate = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
   implicit def DateEncodeJson: EncodeJson[Date] =
     EncodeJson((date: Date) =>

@@ -5,7 +5,8 @@ object Build extends sbt.Build {
   override lazy val settings = super.settings ++ Seq(
     organization := "philcali.github.com",
     version := "1.0.0",
-    scalaVersion := "2.11.5"
+    scalaVersion := "2.11.5",
+    scalacOptions += "-feature"
   )
 
   lazy val root = Project(
