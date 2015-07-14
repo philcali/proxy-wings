@@ -5,6 +5,7 @@ import java.util.Date
 case class Credentials(
   username: String,
   password: String,
+  nickname: String,
   sessions: List[String])
 
 trait Owner {
@@ -15,7 +16,6 @@ trait Owner {
 }
 
 trait Vehicle {
-  def nickname: String
   def vin: String
   def battery: Battery
 }

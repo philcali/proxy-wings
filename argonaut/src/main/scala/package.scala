@@ -28,7 +28,6 @@ package object json {
 
   implicit def VehicleEncodeJson: EncodeJson[Vehicle] =
     EncodeJson((vehicle: Vehicle) =>
-      ("nickname" := vehicle.nickname) ->:
       ("vin" := vehicle.vin) ->:
       ("battery" := vehicle.battery) ->: jEmptyObject)
 
@@ -37,6 +36,24 @@ package object json {
     // as they add no value to our app
     EncodeJson((owner: Owner) =>
       ("id" := owner.id) ->:
+      ("nickname" := owner.credentials.nickname) ->:
       ("vehicle" := owner.vehicle) ->:
       ("modified" := owner.modified) ->: jEmptyObject)
+
+  implicit def CarwingsErrorEncodeJson: EncodeJson[CarwingsError] =
+    EncodeJson((error: CarwingsError) =>
+      ("message" := error.message) ->:
+      ("code" := error.code) ->: jEmptyObject)
+
+  implicit class ArgonautOwner(owner: Owner) {
+    def asJson = OwnerEncodeJson(owner)
+  }
+
+  implicit class ArgonautVehicle(vehicle: Vehicle) {
+    def asJson = VehicleEncodeJson(vehicle)
+  }
+
+  implicit class ArgonautCarwingsError(error: CarwingsError) {
+    def asJson = CarwingsErrorEncodeJson(error)
+  }
 }

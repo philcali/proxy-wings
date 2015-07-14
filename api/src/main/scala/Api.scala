@@ -1,34 +1,42 @@
 package carwings
 package api
+import json._
 
+import util.Try
 import unfiltered.request._
 import unfiltered.response._
 import unfiltered.directives._, Directives._
 import client._, Carwings._
 
 object Authorized {
-  def Identity = headers("X-Authorized-Identity")
+  def header(name: String, message: String) = headers(name)
     .map({
       case headers if headers.hasNext => headers.next
     })
     .orElse(
-      failure(new ResponseJoiner("Invalid identity")(message =>
-        Unauthorized ~> ResponseString(message.mkString("\n"))
+      failure(new ResponseJoiner(message)(s =>
+        Unauthorized ~> ResponseString(CarwingsError(401, s.mkString(";")).asJson.toString())
       ))
     )
+
+  def Identity = header("X-Authorized-Identity", "Invalid Identity")
+  def Region = data.Requiring[Carwings]
+    .fail(name => new ResponseJoiner("Missing Region")(s =>
+      BadRequest ~> ResponseString(CarwingsError(400, s.mkString(";")).asJson.toString())
+    ))
+    .named("region")(data.Interpreter((regions: Seq[String]) => Try(Carwings(regions.mkString)).toOption))
 }
 
 trait Api {
-  import argonaut._, Argonaut._
-  import json._
+  import dispatch._, Defaults._
 
   val vehicles: VehicleStore
 
-  // TODO: is this the best place?
-  implicit def CarwingsErrorEncodeJson: EncodeJson[CarwingsError] =
-    EncodeJson((error: CarwingsError) ->:
-      ("message" := error.message) ->:
-      ("code" := error.code) ->: jEmptyObject)
+  implicit def require[T] = data.Requiring[T].fail({
+    case name =>
+    BadRequest ~>
+    ResponseString(CarwingsError(400, s"$name is missing").asJson.toString())
+  })
 
   def intent[A, B] = Directive.Intent.Path {
     case Seg(List("owners")) =>
@@ -44,7 +52,7 @@ trait Api {
       }).orElse(Some(
         NotFound ~>
         JsonContent ~>
-        ResponseString(CarwingsError(404, "Vehicle information does not exist"))
+        ResponseString(CarwingsError(404, "Vehicle information does not exist").asJson.toString())
       )).get
     }
     val delete = for {
@@ -57,18 +65,18 @@ trait Api {
     val save = for {
       _ <- POST
       ownerId <- Authorized.Identity
-      username <- data.as.Option[String] named "username"
-      password <- data.as.Option[String] named "password"
-      region <- data.as.Option[String] named "region"
-      response <- Carwings(region).login(username, password).apply()
+      carwings <- Authorized.Region
+      username <- data.as.Required[String] named "username"
+      password <- data.as.Required[String] named "password"
     } yield {
-      response.fold({
+      // TODO: kind of hate this, fixme
+      carwings.login(username, password).apply().fold({
         case error =>
         Unauthorized ~>
         JsonContent ~>
         ResponseString(error.asJson.toString())
       }, {
-        case response.LoginResponse(credentials, vehicle) =>
+        case response.VehicleResponse(credentials, vehicle) =>
         vehicles.save(ownerId, credentials, vehicle).map({
           case owner =>
           JsonContent ~>

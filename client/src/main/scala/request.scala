@@ -40,3 +40,31 @@ case class Login(username: String, password: String) extends SoapRequest {
     </ns:SmartphoneLoginWithAdditionalOperationRequest>
   }
 }
+
+case class VehicleStatus(vin: String) extends SoapRequest {
+  def template = {
+    <ns2:SmartphoneGetVehicleInfoRequest
+      xmlns:ns2="urn:com:airbiquity:smartphone.userservices:v1">
+      <VehicleInfo>
+        <VIN>{ vin }</VIN>
+      </VehicleInfo>
+      <SmartphoneOperationType>SmartphoneLatestBatteryStatusRequest</SmartphoneOperationType>
+      <changeVehicle>false</changeVehicle>
+    </ns2:SmartphoneGetVehicleInfoRequest>
+  }
+}
+
+case class RequestUpdate(vin: String) extends SoapRequest {
+  def template = {
+    <ns4:SmartphoneRemoteBatteryStatusCheckRequest
+      xmlns:ns2="urn:com:hitachi:gdc:type:portalcommon:v1"
+      xmlns:ns4="urn:com:airbiquity:smartphone.vehicleservice:v1"
+      xmlns:ns3="urn:com:hitachi:gdc:type:vehicle:v1">
+      <ns3:BatteryStatusCheckRequest>
+        <ns3:VehicleServiceRequestHeader>
+          <ns2:VIN>{ vin }</ns2:VIN>
+        </ns3:VehicleServiceRequestHeader>
+      </ns3:BatteryStatusCheckRequest>
+    </ns4:SmartphoneRemoteBatteryStatusCheckRequest>
+  }
+}
