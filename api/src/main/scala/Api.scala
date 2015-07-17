@@ -38,7 +38,71 @@ trait Api {
     ResponseString(CarwingsError(400, s"$name is missing").asJson.toString())
   })
 
+  def notFound = Some(
+    NotFound ~>
+    JsonContent ~>
+    ResponseString(CarwingsError(404, "Vehicle information does not exist").asJson.toString())
+  )
+
+  def store(ownerId: String, vresp: response.VehicleResponse) = vresp match {
+    case response.VehicleResponse(credentials, Some(vehicle)) =>
+    vehicles.save(ownerId, credentials, vehicle).map({
+      case owner =>
+      JsonContent ~>
+      ResponseString(owner.asJson.toString())
+    }).orElse(Some(
+      InternalServerError ~>
+      JsonContent ~>
+      ResponseString(CarwingsError(500, "Unable to save vehicle information").asJson.toString())
+    )).get
+  }
+
+  def error(error: CarwingsError) = {
+    Unauthorized ~>
+    JsonContent ~>
+    ResponseString(error.asJson.toString)
+  }
+
   def intent[A, B] = Directive.Intent.Path {
+    case Seg(List("owners", action)) => action match {
+      case "login" =>
+      for {
+        _ <- POST
+        ownerId <- Authorized.Identity
+        carwings <- Authorized.Region
+        username <- data.as.Required[String] named "username"
+        password <- data.as.Required[String] named "password"
+      } yield {
+        carwings.login(username, password).apply().fold(error, store(ownerId, _))
+      }
+      case "status" =>
+      for {
+        _ <- POST
+        ownerId <- Authorized.Identity
+        carwings <- Authorized.Region
+      } yield {
+        vehicles.read(ownerId).map({
+          case owner =>
+          carwings.vehicleStatus(owner.credentials, owner.vehicle.vin).apply()
+            .fold(error, store(ownerId, _))
+        }).orElse(notFound).get
+      }
+      case "update" =>
+      for {
+        _ <- POST
+        ownerId <- Authorized.Identity
+        carwings <- Authorized.Region
+      } yield {
+        vehicles.read(ownerId).map({
+          case owner =>
+          carwings.requestUpdate(owner.credentials, owner.vehicle.vin).apply().fold(error, {
+            case response.VehicleResponse(credentials, None) =>
+            JsonContent ~> ResponseString(owner.asJson.toString)
+            case resp => store(ownerId, resp)
+          })
+        }).orElse(notFound).get
+      }
+    }
     case Seg(List("owners")) =>
     val read = for {
       _ <- GET
@@ -49,11 +113,7 @@ trait Api {
         Ok ~>
         JsonContent ~>
         ResponseString(owner.asJson.toString())
-      }).orElse(Some(
-        NotFound ~>
-        JsonContent ~>
-        ResponseString(CarwingsError(404, "Vehicle information does not exist").asJson.toString())
-      )).get
+      }).orElse(notFound).get
     }
     val delete = for {
       _ <- DELETE
@@ -62,32 +122,6 @@ trait Api {
       vehicles.delete(ownerId)
       NoContent
     }
-    val save = for {
-      _ <- POST
-      ownerId <- Authorized.Identity
-      carwings <- Authorized.Region
-      username <- data.as.Required[String] named "username"
-      password <- data.as.Required[String] named "password"
-    } yield {
-      // TODO: kind of hate this, fixme
-      carwings.login(username, password).apply().fold({
-        case error =>
-        Unauthorized ~>
-        JsonContent ~>
-        ResponseString(error.asJson.toString())
-      }, {
-        case response.VehicleResponse(credentials, vehicle) =>
-        vehicles.save(ownerId, credentials, vehicle).map({
-          case owner =>
-          JsonContent ~>
-          ResponseString(owner.asJson.toString())
-        }).orElse(Some(
-          InternalServerError ~>
-          JsonContent ~>
-          ResponseString(CarwingsError(500, "Unable to save vehicle information").asJson.toString())
-        )).get
-      })
-    }
-    read | save | delete
+    read | delete
   }
 }

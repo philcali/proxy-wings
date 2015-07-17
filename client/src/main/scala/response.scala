@@ -12,7 +12,7 @@ case class UserInfo(node: xml.NodeSeq) {
   lazy val vin = info \\ "Vin" text
 }
 
-case class VehicleResponse(credentials: Credentials, vehicle: Vehicle)
+case class VehicleResponse(credentials: Credentials, vehicle: Option[Vehicle])
 
 case class VehicleNode(vin: String, node: xml.NodeSeq) extends Vehicle {
   lazy val battery = BatteryNode(node \\ "ns4:SmartphoneLatestBatteryStatusResponse")

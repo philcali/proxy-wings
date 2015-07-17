@@ -6,7 +6,7 @@ object Build extends sbt.Build {
     organization := "philcali.github.com",
     version := "1.0.0",
     scalaVersion := "2.11.5",
-    scalacOptions += "-feature"
+    scalacOptions ++= Seq("-feature", "-deprecation")
   )
 
   lazy val root = Project(
@@ -58,7 +58,10 @@ object Build extends sbt.Build {
     "carwings-server",
     file("server"),
     settings = Seq(
-      libraryDependencies += "net.databinder" %% "unfiltered-netty-server" % "0.8.3"
+      libraryDependencies ++= Seq(
+        "net.databinder" %% "unfiltered-jetty" % "0.8.3",
+        "net.databinder" %% "unfiltered-filter" % "0.8.3"
+      )
     )
   ) dependsOn (api, dynamo)
 }
