@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      runas: root
+  AfterInstall:
+    - location: scripts/after_install.sh
+  ApplicationStart:
+    - location: scripts/application_start.sh
+      runas: root
+  ApplicationStop:
+    - location: scripts/application_stop.sh
+      runas: root

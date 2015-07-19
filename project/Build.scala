@@ -1,5 +1,7 @@
 import sbt._
 import Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object Build extends sbt.Build {
   override lazy val settings = super.settings ++ Seq(
@@ -57,8 +59,9 @@ object Build extends sbt.Build {
   lazy val server = Project(
     "carwings-server",
     file("server"),
-    settings = Seq(
+    settings = assemblySettings ++ Seq(
       libraryDependencies ++= Seq(
+        "org.slf4j" % "slf4j-log4j12" % "1.7.12",
         "net.databinder" %% "unfiltered-jetty" % "0.8.3",
         "net.databinder" %% "unfiltered-filter" % "0.8.3"
       )
