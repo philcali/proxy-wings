@@ -1,6 +1,7 @@
 #! /bin/bash
 
-if [ -z `ps aux | grep java | grep -v "grep java"` ]; then
+VALUE=`ps aux | grep java | grep -v "grep java"`
+if [ -z "$VALUE" ]; then
   echo "Nothing to do... Skipping"
 else
   killall java
