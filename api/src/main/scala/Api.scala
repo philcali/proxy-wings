@@ -64,6 +64,8 @@ trait Api {
   }
 
   def intent[A, B] = Directive.Intent.Path {
+    case Seg(List("status")) =>
+      for (_ <- GET) yield Ok
     case Seg(List("owners", action)) => action match {
       case "login" =>
       for {
