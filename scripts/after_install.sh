@@ -1,4 +1,4 @@
 #! /bin/bash
 
-cd /tmp/webapp
+cd /tmp/carwings
 sbt "clean" "project carwings-server" "assembly"
