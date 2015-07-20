@@ -1,4 +1,4 @@
 #! /bin/bash
 
-echo "$PWD"
+cd /tmp/webapp
 sbt "clean" "project carwings-server" "assembly"
