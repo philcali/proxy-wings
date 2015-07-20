@@ -37,7 +37,7 @@ sealed trait SoapRequest extends (Req => Req) {
 
 case class LoginTemplate(username: String, password: String) extends SoapRequest {
   def template = {
-    <ns:SmartphoneLoginWithAdditionalOperationRequest
+    <ns2:SmartphoneLoginWithAdditionalOperationRequest
       xmlns:ns4="urn:com:hitachi:gdc:type:report:v1"
       xmlns:ns7="urn:com:airbiquity:smartphone.vehicleservice:v1"
       xmlns:ns3="http://www.nissanusa.com/owners/schemas/api/0"
@@ -56,7 +56,7 @@ case class LoginTemplate(username: String, password: String) extends SoapRequest
         <SmartphoneType>IPHONE</SmartphoneType>
       </SmartphoneLoginInfo>
       <SmartphoneOperationType>SmartphoneLatestBatteryStatusRequest</SmartphoneOperationType>
-    </ns:SmartphoneLoginWithAdditionalOperationRequest>
+    </ns2:SmartphoneLoginWithAdditionalOperationRequest>
   }
 }
 
