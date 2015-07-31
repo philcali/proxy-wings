@@ -9,15 +9,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 
 object Server {
-
   def main(args: Array[String]) {
     args match {
       case Array(port) =>
-      val db = new DynamoDB(new AmazonDynamoDBClient(new DefaultAWSCredentialsProviderChain()));
+      val aws = new AmazonDynamoDBClient(new DefaultAWSCredentialsProviderChain())
+      val db = new DynamoDB(aws)
       val proxy = new api.Api {
         val vehicles = dynamodb.VehicleStoreDynamo(db)
       }
-
       portBinding(SocketPortBinding(port.toInt, "0.0.0.0"))
         .plan(Planify(proxy.intent))
         .run({

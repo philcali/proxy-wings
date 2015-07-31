@@ -2,6 +2,8 @@ package carwings
 package api
 import json._
 
+import java.util.UUID
+
 import util.Try
 import unfiltered.request._
 import unfiltered.response._
@@ -70,14 +72,14 @@ trait Api {
       case "login" =>
       for {
         _ <- POST
-        ownerId <- Authorized.Identity
         carwings <- Authorized.Region
         username <- data.as.Required[String] named "username"
         password <- data.as.Required[String] named "password"
       } yield {
+        val ownerId = UUID.randomUUID().toString()
         carwings.login(username, password).apply().fold(error, store(ownerId, _))
       }
-      case "status" =>
+      case "vehicleStatus" =>
       for {
         _ <- POST
         ownerId <- Authorized.Identity
@@ -89,7 +91,7 @@ trait Api {
             .fold(error, store(ownerId, _))
         }).orElse(notFound).get
       }
-      case "update" =>
+      case "requestUpdate" =>
       for {
         _ <- POST
         ownerId <- Authorized.Identity

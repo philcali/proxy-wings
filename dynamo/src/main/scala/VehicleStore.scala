@@ -1,17 +1,24 @@
 package carwings
 package dynamodb
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import collection.JavaConversions._
+import util.Failure
+import util.Success
 import util.Try
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.dynamodbv2.document.Item
 
 case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
+  lazy val logger = LoggerFactory.getLogger(classOf[VehicleStoreDynamo])
+
   def owners = db.getTable("Owners")
 
   def save(ownerId: String, credentials: Credentials, vehicle: Vehicle) = {
-    Try (owners.putItem(new Item()
+    Try(owners.putItem(new Item()
       .withPrimaryKey("id", ownerId)
       .withLong("modified", System.currentTimeMillis)
       .withMap("credentials", new Item()
@@ -33,17 +40,24 @@ case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
             .withInt("acOff", vehicle.battery.range.acOff)
             .asMap())
           .asMap())
-        .asMap())))
-      .map(p => OwnerModel(p.getItem()))
-      .toOption
+        .asMap()))) match {
+        case Success(p) => Some(OwnerModel(p.getItem()))
+        case Failure(e) => logger.error("DyanmoDB save: ", e)
+        None
+      }
   }
 
   def read(ownerId: String) = Try(owners.getItem("id", ownerId))
-    .filter(_ != null)
-    .map(OwnerModel(_))
-    .toOption
+    .filter(_ != null) match {
+      case Success(p) => Some(OwnerModel(p))
+      case Failure(e) => logger.error("DyanmoDB read:", e)
+      None
+    }
 
   def delete(ownerId: String) {
-    Try(owners.deleteItem("id", ownerId))
+    Try(owners.deleteItem("id", ownerId)) match {
+      case Success(_) => logger.debug("DyanmoDB delete success.")
+      case Failure(e) => logger.error("DyanmoDB delete:", e)
+    }
   }
 }
