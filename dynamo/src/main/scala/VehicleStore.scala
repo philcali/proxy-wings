@@ -11,11 +11,27 @@ import util.Try
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.dynamodbv2.document.Item
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement
+import com.amazonaws.services.dynamodbv2.model.KeyType
+import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 
 case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
   lazy val logger = LoggerFactory.getLogger(classOf[VehicleStoreDynamo])
 
-  def owners = db.getTable("Owners")
+  def owners = Try(db.createTable(new CreateTableRequest()
+    .withTableName("Owners")
+    .withProvisionedThroughput(new ProvisionedThroughput(1l, 1l))
+    .withKeySchema(new KeySchemaElement("id", KeyType.HASH))
+    .withAttributeDefinitions(new AttributeDefinition("id", "S"))))
+    .recover({
+      // Only recover an existing table exception
+      case riue: ResourceInUseException =>
+      db.getTable("Owners")
+    })
+    .get
 
   def save(ownerId: String, credentials: Credentials, vehicle: Vehicle) = {
     Try(owners.putItem(new Item()
