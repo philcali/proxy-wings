@@ -17,8 +17,9 @@ case class Service(name: String) extends (Req => Req) {
   (req / name <:< Seq("Content-Type" -> "text/xml"))
 }
 case class Authed(credentials: Credentials) extends (Req => Req) {
-  def apply(req: Req) =
-  req <:< Seq("Cookie" -> credentials.sessions.mkString(";"))
+  def apply(req: Req) = {
+    req <:< Seq("Cookie" -> credentials.sessions.mkString(";"))
+  }
 }
 case object Post extends (Req => Future[Either[CarwingsError, Response]]) {
   def exception(t: Throwable) = CarwingsError(Carwings.Errors.General.id, t.getMessage)
@@ -38,21 +39,21 @@ sealed trait SoapRequest extends (Req => Req) {
 case class LoginTemplate(username: String, password: String) extends SoapRequest {
   def template = {
     <ns2:SmartphoneLoginWithAdditionalOperationRequest
-      xmlns:ns4="urn:com:hitachi:gdc:type:report:v1"
-      xmlns:ns7="urn:com:airbiquity:smartphone.vehicleservice:v1"
-      xmlns:ns3="http://www.nissanusa.com/owners/schemas/api/0"
-      xmlns:ns5="urn:com:airbiquity:smartphone.reportservice:v1"
+      xmlns:ns4="urn:com:airbiquity:smartphone.reportservice:v1"
+      xmlns:ns7="urn:com:airbiquity:smartphone.common:v1"
+      xmlns:ns3="urn:com:hitachi:gdc:type:report:v1"
+      xmlns:ns5="urn:com:hitachi:gdc:type:vehicle:v1"
       xmlns:ns2="urn:com:airbiquity:smartphone.userservices:v1"
-      xmlns:ns6="urn:com:hitachi:gdc:type:vehicle:v1">
+      xmlns:ns6="urn:com:airbiquity:smartphone.vehicleservice:v1">
       <SmartphoneLoginInfo>
         <UserLoginInfo>
           <userId>{ username }</userId>
           <userPassword>{ password }</userPassword>
         </UserLoginInfo>
         <DeviceToken>{ "PEBBLE" + System.currentTimeMillis }</DeviceToken>
-        <UUID>{ "carwings:" + username }</UUID>
+        <UUID>{ "carwingspebble:" + username }</UUID>
         <Locale>US</Locale>
-        <AppVersion>1.70</AppVersion>
+        <AppVersion>1.7</AppVersion>
         <SmartphoneType>IPHONE</SmartphoneType>
       </SmartphoneLoginInfo>
       <SmartphoneOperationType>SmartphoneLatestBatteryStatusRequest</SmartphoneOperationType>
@@ -65,10 +66,10 @@ case class VehicleStatusTemplate(vin: String) extends SoapRequest {
     <ns2:SmartphoneGetVehicleInfoRequest
       xmlns:ns2="urn:com:airbiquity:smartphone.userservices:v1">
       <VehicleInfo>
-        <VIN>{ vin }</VIN>
+        <Vin>{ vin }</Vin>
       </VehicleInfo>
       <SmartphoneOperationType>SmartphoneLatestBatteryStatusRequest</SmartphoneOperationType>
-      <changeVehicle>false</changeVehicle>
+      <checkVehicle>false</checkVehicle>
     </ns2:SmartphoneGetVehicleInfoRequest>
   }
 }

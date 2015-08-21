@@ -57,14 +57,7 @@ class Carwings(baseUrl: String) {
     response <- RequestUpdate(credentials, vin)(baseUrl).right
     guard <- (Convert andThen Guard)(response)
   } yield {
-    guard.fold(Retry(credentials, this).andThen(v => {
-      for {
-        vehicleResponse <- v.right
-        child <- RequestUpdate(vehicleResponse.credentials, vin)(baseUrl).right
-      } yield {
-        VehicleResponse(vehicleResponse.credentials, None)
-      }
-    }).andThen(_.apply()), {
+    guard.fold(Retry(credentials, this).andThen(_.apply()), {
       case node =>
       Right(VehicleResponse(credentials, None))
     })

@@ -33,7 +33,10 @@ object Build extends sbt.Build {
     "carwings-dynamo",
     file("dynamo"),
     settings = Seq(
-      libraryDependencies += "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.4"
+      libraryDependencies ++= Seq(
+        "org.slf4j" % "slf4j-log4j12" % "1.7.12",
+        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.4"
+      )
     )
   ) dependsOn data
 
@@ -61,7 +64,6 @@ object Build extends sbt.Build {
     file("server"),
     settings = assemblySettings ++ Seq(
       libraryDependencies ++= Seq(
-        "org.slf4j" % "slf4j-log4j12" % "1.7.12",
         "net.databinder" %% "unfiltered-jetty" % "0.8.3",
         "net.databinder" %% "unfiltered-filter" % "0.8.3"
       )

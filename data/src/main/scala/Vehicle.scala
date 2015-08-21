@@ -6,7 +6,7 @@ case class Credentials(
   username: String,
   password: String,
   nickname: String,
-  sessions: List[String])
+  sessions: Seq[String])
 
 trait Owner {
   def id: String
