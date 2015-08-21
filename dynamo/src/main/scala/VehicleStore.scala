@@ -34,7 +34,7 @@ case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
     .get
 
   def save(ownerId: String, credentials: Credentials, vehicle: Vehicle) = {
-    Try(owners.putItem(new Item()
+    val vehicleItem = new Item()
       .withPrimaryKey("id", ownerId)
       .withLong("modified", System.currentTimeMillis)
       .withMap("credentials", new Item()
@@ -56,8 +56,9 @@ case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
             .withInt("acOff", vehicle.battery.range.acOff)
             .asMap())
           .asMap())
-        .asMap()))) match {
-        case Success(p) => Some(OwnerModel(p.getItem()))
+        .asMap())
+    Try(owners.putItem(vehicleItem)) match {
+        case Success(p) => Some(OwnerModel(vehicleItem))
         case Failure(e) => logger.error("DyanmoDB save: ", e)
         None
       }

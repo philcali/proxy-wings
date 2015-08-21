@@ -38,16 +38,19 @@ case class RequestUpdate(credentials: Credentials, vin: String) extends (String 
 }
 
 case object Convert extends (Response => xml.NodeSeq) {
-  def apply(resp: Response) = XML.loadString(resp.getResponseBody())
+  def apply(resp: Response) = resp. getResponseBody match {
+    case str if str.isEmpty() => xml.NodeSeq.Empty
+    case str => XML.loadString(str)
+  }
 }
 
 case object Guard extends (xml.NodeSeq => Future[Either[CarwingsError, xml.NodeSeq]]) {
   import Carwings.Errors._
-  private val errorLabel = "ns7:SmartphoneErrorType"
 
   def apply(node: xml.NodeSeq) = Future {
-    if (!node.isEmpty && node.head.label == errorLabel) {
-      Left((node \ "ErrorCode" text) match {
+    val errorCode = (node \\ "ErrorCode")
+    if (!errorCode.isEmpty) {
+      Left((errorCode text) match {
       case "9001" => CarwingsError(InvalidCredentials.id, "Error authenticating")
       case "9003" => CarwingsError(InvalidSession.id, "Invalid session")
       case code => CarwingsError(code.toInt, "Unknown error")

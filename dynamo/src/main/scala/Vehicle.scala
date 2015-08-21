@@ -10,11 +10,14 @@ case class OwnerModel(item: Item) extends Owner {
   lazy val id = item.getString("id")
   lazy val modified = new Date(item.getLong("modified"))
   lazy val vehicle = VehicleModel(Item.fromMap(item.getRawMap("vehicle")))
-  lazy val credentials = Credentials(
-    item.getString("username"),
-    item.getString("password"),
-    item.getString("nickname"),
-    item.getStringSet("sessions").toList)
+  lazy val credentials = {
+    val credentials = Item.fromMap(item.getRawMap("credentials"));
+    Credentials(
+      credentials.getString("username"),
+      credentials.getString("password"),
+      credentials.getString("nickname"),
+      credentials.getStringSet("sessions").toSeq)
+  }
 }
 
 case class VehicleModel(item: Item) extends Vehicle {

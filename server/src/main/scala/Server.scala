@@ -18,6 +18,7 @@ object Server {
     }
     portBinding(SocketPortBinding(port, "0.0.0.0"))
       .plan(Planify(proxy.intent))
+      .resources(getClass.getClassLoader.getResource("public"))
       .run({
         server =>
         println(s"Server started on ${server}.")
