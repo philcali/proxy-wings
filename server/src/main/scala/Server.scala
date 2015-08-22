@@ -2,8 +2,7 @@ package carwings
 package server
 
 import unfiltered.filter.Planify
-import unfiltered.jetty.Server.portBinding
-import unfiltered.jetty.SocketPortBinding
+import unfiltered.jetty.Server.httpsSysProperties
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
@@ -16,7 +15,7 @@ object Server {
     val proxy = new api.Api {
       val vehicles = dynamodb.VehicleStoreDynamo(db)
     }
-    portBinding(SocketPortBinding(port, "0.0.0.0"))
+    httpsSysProperties(port, "0.0.0.0")
       .plan(Planify(proxy.intent))
       .resources(getClass.getClassLoader.getResource("public"))
       .run({
