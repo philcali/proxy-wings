@@ -38,6 +38,7 @@ sealed trait SoapRequest extends (Req => Req) {
 
 case class LoginTemplate(username: String, password: String) extends SoapRequest {
   def template = {
+    val now = System.currentTimeMillis
     <ns2:SmartphoneLoginWithAdditionalOperationRequest
       xmlns:ns4="urn:com:airbiquity:smartphone.reportservice:v1"
       xmlns:ns7="urn:com:airbiquity:smartphone.common:v1"
@@ -50,8 +51,8 @@ case class LoginTemplate(username: String, password: String) extends SoapRequest
           <userId>{ username }</userId>
           <userPassword>{ password }</userPassword>
         </UserLoginInfo>
-        <DeviceToken>{ "PEBBLE" + System.currentTimeMillis }</DeviceToken>
-        <UUID>{ "carwingspebble:" + username }</UUID>
+        <DeviceToken>{ "PEBBLE" + username + ":" + now }</DeviceToken>
+        <UUID>{ "carwingspebble:" + username + ":" + now }</UUID>
         <Locale>US</Locale>
         <AppVersion>1.7</AppVersion>
         <SmartphoneType>IPHONE</SmartphoneType>
