@@ -53,11 +53,15 @@ class Carwings(baseUrl: String) {
     })
   }
 
-  def requestUpdate(credentials: Credentials, vin: String) = for {
+  def requestUpdate(credentials: Credentials, vin: String, retry: Boolean = true): Future[Either[CarwingsError, VehicleResponse]] = for {
     response <- RequestUpdate(credentials, vin)(baseUrl).right
     guard <- (Convert andThen Guard)(response)
   } yield {
-    guard.fold(Retry(credentials, this).andThen(_.apply()), {
+    guard.fold(Retry(credentials, this).andThen(_.apply() match {
+      case Right(VehicleResponse(newCreds, _)) if retry =>
+      requestUpdate(newCreds, vin, false).apply()
+      case other => other
+    }), {
       case node =>
       Right(VehicleResponse(credentials, None))
     })
