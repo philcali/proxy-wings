@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /tmp/carwings
+    destination: /webapps/carwings
 hooks:
   BeforeInstall:
     - location: scripts/before_install.sh
@@ -15,4 +15,7 @@ hooks:
       runas: root
   ApplicationStop:
     - location: scripts/application_stop.sh
+      runas: root
+  ValidateService:
+    - location: scripts/validate_service.sh
       runas: root
