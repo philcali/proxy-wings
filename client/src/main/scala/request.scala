@@ -2,12 +2,15 @@ package carwings
 package client
 package request
 
-import java.io.StringWriter
-import java.lang.System
-import com.ning.http.client.Response
-
 import dispatch._, Defaults._
 import xml.XML
+
+import java.io.StringWriter
+import java.lang.System
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import com.ning.http.client.Response
 
 case object Url extends (String => Req) {
   def apply(baseUrl: String) = url(baseUrl)
@@ -87,5 +90,39 @@ case class RequestUpdateTemplate(vin: String) extends SoapRequest {
         </ns3:VehicleServiceRequestHeader>
       </ns3:BatteryStatusCheckRequest>
     </ns4:SmartphoneRemoteBatteryStatusCheckRequest>
+  }
+}
+
+case class StartClimateTemplate(vin: String, date: Option[Date]) extends SoapRequest {
+  def template = {
+    val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
+    <ns4:SmartphoneRemoteACTimerRequest
+      xmlns:ns4="urn:com:airbiquity:smartphone.vehicleservice:v1"
+      xmlns:ns3="urn:com:hitachi:gdc:type:vehicle:v1"
+      xmlns:ns2="urn:com:hitachi:gdc:type:portalcommon:v1">
+      <ns3:ACRemoteRequest>
+        <ns3:VehicleServiceRequestHeader>
+          <ns2:VIN>{ vin }</ns2:VIN>
+        </ns3:VehicleServiceRequestHeader>
+        <ns3:NewACRemoteRequest>
+          <ns3:ExecuteTime>{ date.orElse(Some(new Date())).map(format.format).get  }</ns3:ExecuteTime>
+        </ns3:NewACRemoteRequest>
+      </ns3:ACRemoteRequest>
+    </ns4:SmartphoneRemoteACTimerRequest>
+  }
+}
+
+case class StopClimateTemplate(vin: String) extends SoapRequest {
+  def template = {
+    <ns4:SmartphoneRemoteACOffRequest
+      xmlns:ns4="urn:com:airbiquity:smartphone.vehicleservice:v1"
+      xmlns:ns3="urn:com:hitachi:gdc:type:vehicle:v1"
+      xmlns:ns2="urn:com:hitachi:gdc:type:portalcommon:v1">
+      <ns3:ACRemoteOffRequest>
+        <ns3:VehicleServiceRequestHeader>
+          <ns2:VIN>{ vin }</ns2:VIN>
+        </ns3:VehicleServiceRequestHeader>
+      </ns3:ACRemoteOffRequest>
+    </ns4:SmartphoneRemoteACOffRequest>
   }
 }
