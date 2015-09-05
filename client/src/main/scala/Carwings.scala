@@ -1,11 +1,13 @@
 package carwings
 package client
 
-import com.ning.http.client.Response
-
 import dispatch._, Defaults._
 import collection.JavaConversions._
 import language.postfixOps
+
+import java.util.Date
+
+import com.ning.http.client.Response
 
 object Carwings {
   object Errors extends Enumeration {
@@ -43,13 +45,33 @@ class Carwings(baseUrl: String) {
     VehicleResponse(credentials, Some(VehicleNode(info.vin, node)))
   }
 
-  def vehicleStatus(credentials: Credentials, vin: String) = for {
+  def vehicleStatus(credentials: Credentials, vin: String, retry: Boolean = true): Future[Either[CarwingsError, VehicleResponse]] = for {
     response <- VehicleStatus(credentials, vin)(baseUrl).right
     guard <- (Convert andThen Guard)(response)
   } yield {
-    guard.fold(Retry(credentials, this).andThen(_.apply()), {
+    guard.fold(Retry(credentials, this, retry)(vehicleStatus(_, vin, _)).andThen(_.apply()), {
       case node =>
       Right(VehicleResponse(credentials, Some(VehicleNode(vin, node))))
+    })
+  }
+
+  def startClimateControl(credentials: Credentials, vin: String, date: Option[Date] = None, retry: Boolean = true): Future[Either[CarwingsError, VehicleResponse]] = for {
+    response <- StartClimate(credentials, vin, date)(baseUrl).right
+    guard <- (Convert andThen Guard)(response)
+  } yield {
+    guard.fold(Retry(credentials, this, retry)(startClimateControl(_, vin, date, _)).andThen(_.apply()), {
+      case node =>
+      Right(VehicleResponse(credentials, None))
+    })
+  }
+
+  def stopClimateControl(credentials: Credentials, vin: String, retry: Boolean = false): Future[Either[CarwingsError, VehicleResponse]] = for {
+    response <- StopClimate(credentials, vin)(baseUrl).right
+    guard <- (Convert andThen Guard)(response)
+  } yield {
+    guard.fold(Retry(credentials, this, retry)(stopClimateControl(_, vin, _)).andThen(_.apply()), {
+      case node =>
+      Right(VehicleResponse(credentials, None))
     })
   }
 
@@ -57,11 +79,7 @@ class Carwings(baseUrl: String) {
     response <- RequestUpdate(credentials, vin)(baseUrl).right
     guard <- (Convert andThen Guard)(response)
   } yield {
-    guard.fold(Retry(credentials, this).andThen(_.apply() match {
-      case Right(VehicleResponse(newCreds, _)) if retry =>
-      requestUpdate(newCreds, vin, false).apply()
-      case other => other
-    }), {
+    guard.fold(Retry(credentials, this, retry)(requestUpdate(_, vin, _)).andThen(_.apply()), {
       case node =>
       Right(VehicleResponse(credentials, None))
     })

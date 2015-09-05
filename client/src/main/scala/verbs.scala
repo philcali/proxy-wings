@@ -5,8 +5,11 @@ package verbs
 import request._
 import dispatch._, Defaults._
 import language.postfixOps
-import com.ning.http.client.Response
 import xml.XML
+
+import java.util.Date
+
+import com.ning.http.client.Response
 
 case class Login(username: String, password: String) extends (String =>Future[Either[CarwingsError, Response]]) {
   def apply(baseUrl: String) = {
@@ -37,6 +40,26 @@ case class RequestUpdate(credentials: Credentials, vin: String) extends (String 
   }
 }
 
+case class StartClimate(credentials: Credentials, vin: String, date: Option[Date]) extends (String => Future[Either[CarwingsError, Response]]) {
+  def apply(baseUrl: String) = {
+    Url andThen
+    Service("vehicleService") andThen
+    StartClimateTemplate(vin, date) andThen
+    Authed(credentials) andThen
+    Post apply baseUrl
+  }
+}
+
+case class StopClimate(credentials: Credentials, vin: String) extends (String => Future[Either[CarwingsError, Response]]) {
+  def apply(baseUrl: String) = {
+    Url andThen
+    Service("vehicleService") andThen
+    StopClimateTemplate(vin) andThen
+    Authed(credentials) andThen
+    Post apply baseUrl
+  }
+}
+
 case object Convert extends (Response => xml.NodeSeq) {
   def apply(resp: Response) = resp. getResponseBody match {
     case str if str.isEmpty() => xml.NodeSeq.Empty
@@ -59,10 +82,15 @@ case object Guard extends (xml.NodeSeq => Future[Either[CarwingsError, xml.NodeS
   }
 }
 
-case class Retry(creds: Credentials, wings: Carwings) extends (CarwingsError => Future[Either[CarwingsError, response.VehicleResponse]]) {
+case class Retry(creds: Credentials, wings: Carwings, retry: Boolean = true)(thunk: (Credentials, Boolean) => Future[Either[CarwingsError, response.VehicleResponse]]) extends (CarwingsError => Future[Either[CarwingsError, response.VehicleResponse]]) {
   def apply(error: CarwingsError) = error match {
-  case CarwingsError(9003, _) =>
-  wings.login(creds.username, creds.password)
+  case CarwingsError(9003, _) if retry =>
+  for {
+    response <- wings.login(creds.username, creds.password).right
+    completed <- thunk(response.credentials, false).right
+  } yield {
+    completed
+  }
   case _ =>
   Future(Left(error))
   }
