@@ -51,6 +51,13 @@ case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
           .withLong("lastCheck", vehicle.battery.lastCheck.getTime())
           .withInt("capacity", vehicle.battery.capacity)
           .withInt("remaining", vehicle.battery.remaining)
+          .withMap("chargingTimes", vehicle.battery.chargingTimes.foldLeft(new Item)({
+            case (item, (key, timeToCharge)) => item.withMap(key, new Item()
+              .withInt("hours", timeToCharge.hours)
+              .withInt("minutes", timeToCharge.minutes)
+              .asMap())
+            })
+            .asMap())
           .withMap("range", new Item()
             .withInt("acOn", vehicle.battery.range.acOn)
             .withInt("acOff", vehicle.battery.range.acOff)

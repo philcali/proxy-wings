@@ -24,12 +24,18 @@ package object json {
       ("lastCheck" := battery.lastCheck) ->:
       ("capacity" := battery.capacity) ->:
       ("remaining" := battery.remaining) ->:
-      ("range" := battery.range) ->: jEmptyObject)
+      ("range" := battery.range) ->:
+      ("chargingTimes" := battery.chargingTimes) ->: jEmptyObject)
 
   implicit def VehicleEncodeJson: EncodeJson[Vehicle] =
     EncodeJson((vehicle: Vehicle) =>
       ("vin" := vehicle.vin) ->:
       ("battery" := vehicle.battery) ->: jEmptyObject)
+
+  implicit def TimeToChargeJson: EncodeJson[TimeToCharge] =
+    EncodeJson((timeToCharge: TimeToCharge) =>
+      ("hours" := timeToCharge.hours) ->:
+      ("minutes" := timeToCharge.minutes) ->: jEmptyObject)
 
   implicit def OwnerEncodeJson: EncodeJson[Owner] =
     // Note: we explicitly do not expose the credentials
