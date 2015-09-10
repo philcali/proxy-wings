@@ -32,6 +32,19 @@ case class BatteryModel(item: Item) extends Battery {
   lazy val capacity = item.getInt("capacity")
   lazy val remaining = item.getInt("remaining")
   lazy val range = RangeModel(Item.fromMap(item.getRawMap("range")))
+  def chargingTimes = if (item.isPresent("chargingTimes")) {
+    val times = Item.fromMap(item.getRawMap("chargingTimes"))
+    Map(List("trickle", "normal").filter(times.isPresent).map(s => {
+      s -> TimeToChargeModel(Item.fromMap(times.getRawMap(s)))
+    }):_*)
+  } else {
+    Map.empty
+  }
+}
+
+case class TimeToChargeModel(item: Item) extends TimeToCharge {
+  lazy val hours = item.getInt("hours")
+  lazy val minutes = item.getInt("minutes")
 }
 
 case class RangeModel(item: Item) extends Range {
