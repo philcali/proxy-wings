@@ -10,7 +10,3 @@ fi
 if [ -z `which awslogsd` ]; then
   yum install -y awslogs
 fi
-
-cd /webapps/carwings
-cp aws/awslogs.conf /etc/awslogs/awslogs.conf
-aws s3 cp s3://proxywings.com/proxywings.jks proxywings.jks
