@@ -33,8 +33,8 @@ case class BatteryNode(node: xml.NodeSeq) extends Battery {
   def pluginState = batteryRecords \ "PluginState" text
   def lastCheck = date.parse(node \\ "lastBatteryStatusCheckExecutionTime" text)
   def chargingTimes = Map(List(
-      "trickle" -> "TimeRequiredToFull",
-      "normal" -> "TimeRequiredToFull200"
+      "120V" -> "TimeRequiredToFull",
+      "240V" -> "TimeRequiredToFull200"
     ).map(kv => kv._1 -> batteryRecords \\ kv._2)
      .filter(!_._2.isEmpty)
      .map(kv => kv._1 -> TimeToChargeNode(kv._2)):_*)

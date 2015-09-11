@@ -34,7 +34,7 @@ case class BatteryModel(item: Item) extends Battery {
   lazy val range = RangeModel(Item.fromMap(item.getRawMap("range")))
   def chargingTimes = if (item.isPresent("chargingTimes")) {
     val times = Item.fromMap(item.getRawMap("chargingTimes"))
-    Map(List("trickle", "normal").filter(times.isPresent).map(s => {
+    Map(List("120V", "240V").filter(times.isPresent).map(s => {
       s -> TimeToChargeModel(Item.fromMap(times.getRawMap(s)))
     }):_*)
   } else {
