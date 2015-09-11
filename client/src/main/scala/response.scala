@@ -32,6 +32,17 @@ case class BatteryNode(node: xml.NodeSeq) extends Battery {
   def remaining = (batteryStatus \ "BatteryRemainingAmount" text).toInt
   def pluginState = batteryRecords \ "PluginState" text
   def lastCheck = date.parse(node \\ "lastBatteryStatusCheckExecutionTime" text)
+  def chargingTimes = Map(List(
+      "120V" -> "TimeRequiredToFull",
+      "240V" -> "TimeRequiredToFull200"
+    ).map(kv => kv._1 -> batteryRecords \\ kv._2)
+     .filter(!_._2.isEmpty)
+     .map(kv => kv._1 -> TimeToChargeNode(kv._2)):_*)
+}
+
+case class TimeToChargeNode(node: xml.NodeSeq) extends TimeToCharge {
+  lazy val hours = (node \ "HourRequiredToFull" text).toInt
+  lazy val minutes = (node \ "MinutesRequiredToFull" text).toInt
 }
 
 case class RangeNode(node: xml.NodeSeq) extends Range {

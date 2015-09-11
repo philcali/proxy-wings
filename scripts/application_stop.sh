@@ -6,4 +6,4 @@ if [ -z "$VALUE" ]; then
 else
   killall java
 fi
-rm -rf /tmp/carwings/*
+rm -rf /webapps/carwings/*

@@ -2,13 +2,15 @@ package carwings
 package api
 import json._
 
-import java.util.UUID
-
 import util.Try
 import unfiltered.request._
 import unfiltered.response._
 import unfiltered.directives._, Directives._
 import client._, Carwings._
+
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.UUID
 
 object Authorized {
   def header(name: String, message: String) = headers(name)
@@ -40,6 +42,10 @@ trait Api {
     ResponseString(CarwingsError(400, s"$name is missing").asJson.toString())
   })
 
+  implicit def implyDate = data.as.String ~> data.Fallible[String, Date](formatDate)
+
+  def formatDate(dateStr: String) = Try(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(dateStr)).toOption
+
   def notFound = Some(
     NotFound ~>
     JsonContent ~>
@@ -57,6 +63,12 @@ trait Api {
       JsonContent ~>
       ResponseString(CarwingsError(500, "Unable to save vehicle information").asJson.toString())
     )).get
+  }
+
+  def refreshOrStore(ownerId: String, owner: Owner)(vresp: response.VehicleResponse) = vresp match {
+    case response.VehicleResponse(credentials, None) =>
+    JsonContent ~> ResponseString(owner.asJson.toString)
+    case resp => store(ownerId, resp)
   }
 
   def error(error: CarwingsError) = {
@@ -91,6 +103,31 @@ trait Api {
             .fold(error, store(ownerId, _))
         }).orElse(notFound).get
       }
+      case "startClimateControl" =>
+      for {
+        _ <- POST
+        ownerId <- Authorized.Identity
+        carwings <- Authorized.Region
+        startTime <- data.as.Option[Date] named "startTime"
+      } yield {
+        vehicles.read(ownerId).map({
+          case owner =>
+          carwings.startClimateControl(owner.credentials, owner.vehicle.vin, startTime).apply()
+            .fold(error, refreshOrStore(ownerId, owner))
+        }).orElse(notFound).get
+      }
+      case "stopClimateControl" =>
+      for {
+        _ <- POST
+        ownerId <- Authorized.Identity
+        carwings <- Authorized.Region
+      } yield {
+        vehicles.read(ownerId).map({
+          case owner =>
+          carwings.stopClimateControl(owner.credentials, owner.vehicle.vin).apply()
+            .fold(error, refreshOrStore(ownerId, owner))
+        }).orElse(notFound).get
+      }
       case "requestUpdate" =>
       for {
         _ <- POST
@@ -99,11 +136,8 @@ trait Api {
       } yield {
         vehicles.read(ownerId).map({
           case owner =>
-          carwings.requestUpdate(owner.credentials, owner.vehicle.vin).apply().fold(error, {
-            case response.VehicleResponse(credentials, None) =>
-            JsonContent ~> ResponseString(owner.asJson.toString)
-            case resp => store(ownerId, resp)
-          })
+          carwings.requestUpdate(owner.credentials, owner.vehicle.vin).apply()
+            .fold(error, refreshOrStore(ownerId, owner))
         }).orElse(notFound).get
       }
     }

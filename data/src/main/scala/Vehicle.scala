@@ -27,6 +27,12 @@ trait Battery {
   def capacity: Int
   def remaining: Int
   def range: Range
+  def chargingTimes: Map[String, TimeToCharge]
+}
+
+trait TimeToCharge {
+  def hours: Int
+  def minutes: Int
 }
 
 trait Range {
