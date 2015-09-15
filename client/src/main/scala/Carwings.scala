@@ -65,7 +65,7 @@ class Carwings(baseUrl: String) {
     })
   }
 
-  def stopClimateControl(credentials: Credentials, vin: String, retry: Boolean = false): Future[Either[CarwingsError, VehicleResponse]] = for {
+  def stopClimateControl(credentials: Credentials, vin: String, retry: Boolean = true): Future[Either[CarwingsError, VehicleResponse]] = for {
     response <- StopClimate(credentials, vin)(baseUrl).right
     guard <- (Convert andThen Guard)(response)
   } yield {
