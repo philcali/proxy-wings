@@ -55,7 +55,7 @@ object Build extends sbt.Build {
     "carwings-api",
     file("api"),
     settings = Seq(
-      libraryDependencies += "net.databinder" %% "unfiltered-directives" % "0.8.3"
+      libraryDependencies += "net.databinder" %% "unfiltered-directives" % "0.8.4"
     )
   ) dependsOn (client, argonaut)
 
@@ -64,8 +64,9 @@ object Build extends sbt.Build {
     file("server"),
     settings = assemblySettings ++ Seq(
       libraryDependencies ++= Seq(
-        "net.databinder" %% "unfiltered-jetty" % "0.8.3",
-        "net.databinder" %% "unfiltered-filter" % "0.8.3"
+        "net.databinder" %% "unfiltered-jetty" % "0.8.4",
+        "net.databinder" %% "unfiltered-filter" % "0.8.4",
+        "org.eclipse.jetty" % "jetty-webapp" % "9.2.5.v20141112"
       )
     )
   ) dependsOn (api, dynamo)
