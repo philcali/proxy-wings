@@ -65,8 +65,7 @@ object Build extends sbt.Build {
     settings = assemblySettings ++ Seq(
       libraryDependencies ++= Seq(
         "net.databinder" %% "unfiltered-jetty" % "0.8.4",
-        "net.databinder" %% "unfiltered-filter" % "0.8.4",
-        "org.eclipse.jetty" % "jetty-webapp" % "9.2.5.v20141112"
+        "net.databinder" %% "unfiltered-filter" % "0.8.4"
       )
     )
   ) dependsOn (api, dynamo)

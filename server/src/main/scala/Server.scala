@@ -24,13 +24,13 @@ object Server {
       factory.setIncludeCipherSuites(
         "TLS_DHE_RSA.*",
         "TLS_ECDHE.*")
+      */
       factory.setExcludeCipherSuites(
         ".*NULL.*",
         ".*RC4.*",
         ".*MD5.*",
         ".*DES.*",
         ".*DSS.*")
-      */
       factory.setExcludeProtocols(
         "SSL",
         "SSLv2",
