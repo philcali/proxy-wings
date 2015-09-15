@@ -19,7 +19,6 @@ object Server {
       val factory = new SslContextFactory
       factory.setKeyStorePath(keyStorePath)
       factory.setKeyStorePassword(keyStorePassword)
-      factory.setRenegotiationAllowed(false);
       /**
       factory.setIncludeCipherSuites(
         "TLS_DHE_RSA.*",
