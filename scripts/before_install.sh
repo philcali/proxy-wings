@@ -10,3 +10,7 @@ fi
 if [ -z `which awslogsd` ]; then
   yum install -y awslogs
 fi
+
+if [ ! -d "/var/awslogs/state" ] then
+  mkdir -p /var/awslogs/state
+fi
