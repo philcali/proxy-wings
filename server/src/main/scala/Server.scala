@@ -19,9 +19,11 @@ object Server {
       val factory = new SslContextFactory
       factory.setKeyStorePath(keyStorePath)
       factory.setKeyStorePassword(keyStorePassword)
+      /**
       factory.setIncludeCipherSuites(
         "TLS_DHE_RSA.*",
         "TLS_ECDHE.*")
+      */
       factory.setExcludeCipherSuites(
         ".*NULL.*",
         ".*RC4.*",
