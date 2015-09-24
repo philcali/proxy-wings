@@ -23,7 +23,7 @@
       <div class="item-container-content">
         <label class="item">
           <div class="item-input-wrapper">
-            <input type="password" placeholder="Password" id="username" class="item-input">
+            <input type="password" placeholder="Password" id="password" class="item-input">
           </div>
         </label>
       </div>
@@ -92,10 +92,46 @@
         </label>
       </div>
     </div>
+    <div class="item-container" id="fallbackOption">
+      <input type="hidden" name="latitude">
+      <input type="hidden" name="longitude">
+      <div class="item-container-header">Fallback Position</div>
+      <div class="item-container-content">
+        <div class="item" id="fallbackMap" style="display:none;height:300px"></div>
+      </div>
+      <div class="item-container-footer">
+        This fallback position is only used if the Pebble app is unable to
+        commnuicate your current coordinates to the watch. Double tap on the
+        map to set the fallback coords.
+      </div>
+    </div>
+    <div class="item-container">
+      <div class="item-container-header">Stations Max Results</div>
+      <div class="item-container-content">
+        <label class="item">
+          <input type="range" class="item-slider" name="maxresults" value="10" max="25">
+          <div class="item-range-wrapper item-slider-text item-input-wrapper">
+            <input type="text" class="item-input" name="maxresults" value="10">
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="item-container">
+      <div class="item-container-header">Stations Radius</div>
+      <div class="item-container-content">
+        <label class="item">
+          <input type="range" class="item-slider" name="distance" value="10">
+          <div class="item-range-wrapper item-slider-text item-input-wrapper">
+            <input type="text" class="item-input" name="distance" value="10">
+          </div>
+        </label>
+      </div>
+    </div>
     <div class="item-container">
       <div class="button-container">
-        <input type="button" class="item-button" value="Submit">
+        <input type="button" class="item-button submit" value="Submit">
       </div>
     </div>
   </body>
+  <script type="text/javascript" async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxXTjMr-5ETLKjalyuyn2xaBzT9vmUysk&callback=initMap"></script>
 </html>
