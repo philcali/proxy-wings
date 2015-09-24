@@ -18,6 +18,7 @@ OCMViewer.prototype.getStations = function(coords, callback) {
 };
 
 var MapView = function(domId) {
+  this.zoom = 10;
   this.ocm = new OCMViewer();
   this.position = {
     lat: 0,
@@ -64,6 +65,7 @@ var MapView = function(domId) {
       lat: e.latLng.H,
       lng: e.latLng.L
     };
+    this.zoom = 10;
     this.redraw();
   }).bind(this));
 };
@@ -110,7 +112,7 @@ MapView.prototype.redraw = function(position) {
   }
   this.clearMap();
   this.markers = [];
-  this.mapView.setZoom(10);
+  this.mapView.setZoom(this.zoom);
   this.mapView.setCenter(this.position);
   this.selfCircle.setMap(this.mapView);
   this.selfCircle.setRadius(this.config.meters());
@@ -152,7 +154,7 @@ var map = null
       timeout: 10000,
       maximumAge: 10000
     }
-  , showMap = function(data) {
+  , showMap = function(data, zoom) {
       if (!map) {
         $('#fallbackMap').show();
         map = new MapView("fallbackMap");
@@ -160,38 +162,26 @@ var map = null
            .setUnits(data.range || 'mi', true)
            .setDistance(data.distance || 10, true);
       }
+      if (zoom) {
+        map.zoom = zoom;
+      } else {
+        map.zoom = 10;
+      }
       map.redraw(data.fallback);
     };
 function initMap() {
   isLoaded = true;
   if (data.fallback) {
     showMap(data);
-  }
-  var load = function(position) {
-        $('.fallbackButton').show();
-        data.fallback = position;
-        showMap(data);
+  } else {
+    data.fallback = {
+      coords: {
+        latitude: 38.9591,
+        longitude: -97.9101
       }
-    , log = function(error) {
-        var userFacing = "";
-        switch (error.code) {
-          case 2:
-            userFacing = "Unable to pull your current position.";
-            break;
-          case 3:
-            userFacing = "Location timed out.";
-        }
-        if (userFacing != "") {
-          userFacing += " Please try again.";
-          $('.fallbackError').text(userFacing).show();
-        }
-        console.log("ERROR(" + error.code + "): " + error.message);
-      };
-  $('.fallbackButton > .item-button').on('click', function() {
-    $('.fallbackError').hide();
-    navigator.geolocation.getCurrentPosition(load, log, navConfig);
-  });
-  navigator.geolocation.getCurrentPosition(load, log, navConfig);
+    };
+    showMap(data, 3);
+  }
 }
 
 Zepto(function() {
