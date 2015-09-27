@@ -17,6 +17,43 @@ OCMViewer.prototype.getStations = function(coords, callback) {
   });
 };
 
+var Integrations = function() {
+  var integrations = [ new Pushbullet() ];
+  return {
+    forEach: function(callback) {
+      integrations.forEach(callback);
+    }
+  };
+};
+var Integration = function(name) {
+  this.name = name;
+};
+Integration.prototype.getName = function() {
+  return this.name;
+};
+Integration.prototype.login = function(success) {
+  $.ajax({
+    url: '/' + this.getName() + "/login" + location.search,
+    type: 'GET',
+    success: success
+  });
+};
+Integration.prototype.authorize = function(baseUrl) {
+  return baseUrl + encodeURIComponent(this.getRedirectUrl());
+};
+Integration.prototype.getRedirectUrl = function() {
+  return [
+    window.location.protocol + "//",
+    location.host,
+    "/" + this.getName() + "/auth",
+    location.search + "&options=" + location.hash.replace("#", "")
+  ].join('');
+};
+var Pushbullet = function() {
+  this.name = 'pushbullet';
+};
+Pushbullet.prototype = Object.create(Integration.prototype);
+
 var MapView = function(domId) {
   this.zoom = 10;
   this.ocm = new OCMViewer();
@@ -185,7 +222,20 @@ function initMap() {
 }
 
 Zepto(function() {
-  var longClicks = ['up', 'select', 'down'];
+  var longClicks = ['up', 'select', 'down']
+    , integrations = new Integrations()
+    , queryParams = (function(search) {
+        var keyValues = search.replace('?', '')
+          , params = {};
+        keyValues.split('&').forEach(function(keyValue) {
+          var parts = keyValue.split('=');
+          params[parts[0]] = '';
+          if (parts.length > 1) {
+            params[parts[0]] = decodeURIComponent(parts[1]);
+          }
+        });
+        return params;
+      })(location.search);
   $('[name=distance]').on('change', function(e) {
     map.setDistance(this.value);
   });
@@ -196,6 +246,28 @@ Zepto(function() {
   });
   $('[name=maxresults]').on('change', function(e) {
     map.setMaxResults(this.value);
+  });
+  integrations.forEach(function(integration) {
+    $('input[name=' + integration.getName() + 'Enabled]').on('change', function() {
+      var $container = $('.' + integration.getName());
+      if (this.checked) {
+        integration.login(function(data, code, xhr) {
+          if (xhr.status == 200) {
+            $container
+              .show()
+              .find('.' + integration.getName() + "Authorize")
+              .attr('href', integration.authorize(data));
+          }
+        });
+      } else {
+        $container.hide();
+      }
+    });
+    if (queryParams[integration.getName()]) {
+      $('input[name=' + integration.getName() + 'Enabled]')
+        .prop('checked', true)
+        .trigger('change');
+    }
   });
   if (data.username && data.password) {
     $('#username').val(data.username);
@@ -217,6 +289,14 @@ Zepto(function() {
         $('select[name=' + button + 'LongClick]').val(data.longClicks[button]);
       });
     }
+    if (data.integrations) {
+      integrations.forEach(function(integration) {
+        var checked = data.integrations[integration.getName()] || false;
+        $('input[name=' + integration.getName() + 'Enabled]')
+          .prop('checked', checked)
+          .trigger('changed');
+      });
+    }
   } else {
     $('input[value=us]').prop('checked', true);
     $('input[value=mi]').prop('checked', true);
@@ -234,6 +314,9 @@ Zepto(function() {
     longClicks.forEach(function(button) {
       config.longClicks[button] = $('select[name=' + button + 'LongClick]').val();
     });
+    integrations.forEach(function(integration) {
+      config.integrations[integration.getName()] = $('input[name=' + integration.getName() + 'Enabled]').prop('checked');
+    });
     if (map) {
       var center = map.selfCircle.getCenter();
       config.fallback = {
@@ -243,7 +326,6 @@ Zepto(function() {
         }
       };
     }
-
     location.href = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(config));
     return false;
   });

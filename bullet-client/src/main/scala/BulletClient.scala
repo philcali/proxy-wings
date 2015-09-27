@@ -19,6 +19,7 @@ class BulletClient(baseUrl: String, creds: BulletClient.BulletCreds) {
   def authorize() = {
     new StringBuilder(BulletClient.authUrl)
       .append(s"?client_id=${creds.clientId}")
+      .append("&response_type=code")
       .append("&redirect_uri=")
       .toString()
   }
