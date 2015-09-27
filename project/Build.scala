@@ -59,6 +59,48 @@ object Build extends sbt.Build {
     )
   ) dependsOn (client, argonaut)
 
+  lazy val bulletData = Project(
+    "carwings-pushbullet-data",
+    file("bullet-data")
+  )
+
+  lazy val bulletArgonaut = Project(
+    "carwings-pushbullet-argonaut",
+    file("bullet-argonaut"),
+    settings = Seq(
+      libraryDependencies += "io.argonaut" %% "argonaut" % "6.0.4"
+    )
+  ) dependsOn bulletData
+
+  lazy val bulletClient = Project(
+    "carwings-pushbullet-client",
+    file("bullet-client"),
+    settings = Seq(
+      libraryDependencies ++= Seq(
+        "net.databinder.dispatch" %% "dispatch-core" % "0.11.2"
+      )
+    )
+  ) dependsOn bulletArgonaut
+
+  lazy val bulletApi = Project(
+    "carwings-pushbullet-api",
+    file("bullet-api"),
+    settings = Seq(
+      libraryDependencies += "net.databinder" %% "unfiltered-directives" % "0.8.4"
+    )
+  ) dependsOn bulletClient
+
+  lazy val bulletDynamo = Project(
+    "carwings-pushbullet-dynamo",
+    file("bullet-dynamo"),
+    settings = Seq(
+      libraryDependencies ++= Seq(
+        "org.slf4j" % "slf4j-log4j12" % "1.7.12",
+        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.4"
+      )
+    )
+  ) dependsOn bulletData
+
   lazy val server = Project(
     "carwings-server",
     file("server"),
@@ -68,5 +110,5 @@ object Build extends sbt.Build {
         "net.databinder" %% "unfiltered-filter" % "0.8.4"
       )
     )
-  ) dependsOn (api, dynamo)
+  ) dependsOn (api, dynamo, bulletApi, bulletDynamo)
 }

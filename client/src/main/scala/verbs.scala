@@ -61,7 +61,7 @@ case class StopClimate(credentials: Credentials, vin: String) extends (String =>
 }
 
 case object Convert extends (Response => xml.NodeSeq) {
-  def apply(resp: Response) = resp. getResponseBody match {
+  def apply(resp: Response) = resp.getResponseBody match {
     case str if str.isEmpty() => xml.NodeSeq.Empty
     case str => XML.loadString(str)
   }

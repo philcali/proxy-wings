@@ -63,10 +63,15 @@ object Server {
     val proxy = new api.Api {
       val vehicles = dynamodb.VehicleStoreDynamo(db)
     }
+    val bullets = new bullet.api.Api {
+      val logins = new bullet.dynamodb.PushBulletDynamo(db)
+      val client = bullet.client.BulletClient(bullet.SystemBullets)
+    }
     (if (port == 443)
       portBinding(SslSocketPortBinding(port, "0.0.0.0", new SafePropertySslContextProvider)) else
       http(port, "0.0.0.0")
     ).plan(Planify(proxy.intent))
+      .plan(Planify(bullets.intent))
       .resources(getClass.getClassLoader.getResource("public"))
       .run({
         server =>

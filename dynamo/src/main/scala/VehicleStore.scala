@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
   lazy val logger = LoggerFactory.getLogger(classOf[VehicleStoreDynamo])
 
-  def owners = Try(db.createTable(new CreateTableRequest()
+  lazy val owners = Try(db.createTable(new CreateTableRequest()
     .withTableName("Owners")
     .withProvisionedThroughput(new ProvisionedThroughput(1l, 1l))
     .withKeySchema(new KeySchemaElement("id", KeyType.HASH))
@@ -80,7 +80,7 @@ case class VehicleStoreDynamo(db: DynamoDB) extends VehicleStore {
 
   def delete(ownerId: String) {
     Try(owners.deleteItem("id", ownerId)) match {
-      case Success(_) => logger.debug("DyanmoDB delete success.")
+      case Success(_) => logger.info("DyanmoDB deleted: {}", ownerId)
       case Failure(e) => logger.error("DyanmoDB delete:", e)
     }
   }
