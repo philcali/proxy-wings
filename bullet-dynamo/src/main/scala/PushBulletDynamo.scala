@@ -31,14 +31,32 @@ case class PushBulletDynamo(db: DynamoDB) extends PushBulletStore {
     })
     .get
 
-  def save(accountId: String, login: PushBulletToken) = {
+  def save(accountId: String, login: PushBulletToken, user: PushBulletUser, devices: List[PushBulletDevice]) = {
     val item = new Item()
       .withPrimaryKey("accountId", accountId)
-      .withLong("createdAt", System.currentTimeMillis)
+      .withLong("modifiedAt", System.currentTimeMillis)
       .withMap("login", new Item()
         .withString("accessToken", login.accessToken)
         .withString("tokenType", login.tokenType)
         .asMap())
+      .withMap("user", new Item()
+        .withString("iden", user.iden)
+        .withString("name", user.name)
+        .withString("email", user.email)
+        .withString("email_normalized", user.emailNormalized)
+        .withString("image_url", user.imageUrl)
+        .asMap())
+      .withList("devices", devices
+        .map({
+          case device =>
+          val it = new Item()
+            .withBoolean("active", device.active)
+            .withString("iden", device.iden)
+          device.manufacturer.foreach(it.withString("manufacturer", _))
+          device.model.foreach(it.withString("model", _))
+          device.nickname.foreach(it.withString("nickname", _))
+          it.asMap()
+        }):_*)
     Try(logins.putItem(item)) match {
       case Success(p) => Some(PushBulletModel(item))
       case Failure(e) => logger.error("DynamoDB save: ", e)

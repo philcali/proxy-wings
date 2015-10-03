@@ -12,8 +12,14 @@ var OCMViewer = function(config) {
 OCMViewer.prototype.getStations = function(coords, callback) {
   this.config.latitude = coords.lat;
   this.config.longitude = coords.lng;
-  $.getJSON(this.baseUrl, this.config, function(stations) {
-    stations.forEach(callback);
+  $.ajax({
+    url: this.baseUrl,
+    data: this.config,
+    type: 'GET',
+    dataType: 'jsonp',
+    success: function(stations) {
+      stations.forEach(callback);
+    }
   });
 };
 
@@ -31,11 +37,11 @@ var Integration = function(name) {
 Integration.prototype.getName = function() {
   return this.name;
 };
-Integration.prototype.login = function(success) {
+Integration.prototype.login = function($container) {
   $.ajax({
     url: '/' + this.getName() + "/login" + location.search,
     type: 'GET',
-    success: success
+    success: this._loginAttempt($container)
   });
 };
 Integration.prototype.authorize = function(baseUrl) {
@@ -51,8 +57,44 @@ Integration.prototype.getRedirectUrl = function() {
 };
 var Pushbullet = function() {
   this.name = 'pushbullet';
+  this.devices = $('.pushbullet-devices');
 };
 Pushbullet.prototype = Object.create(Integration.prototype);
+Pushbullet.prototype.getResults = function() {
+  var selected = [];
+  this.devices.find('.item-checkbox:checked').each(function() {
+    selected.push(this.value);
+  });
+  return {
+    devices: selected
+  };
+};
+Pushbullet.prototype._loginAttempt = function($container) {
+  var integration = this;
+  return function(result) {
+    if (!result.isAuthed) {
+      $container
+        .show()
+        .find('.' + integration.getName() + "Authorize")
+        .attr('href', integration.authorize(result.authorizeUrl));
+    } else {
+      var $deviceList = integration.devices.show().find('.item-container-content')
+        , selected = {};
+      if (data.pushbullet) {
+        $.each(data.pushbullet.devices, function(index, device) {
+          selected[device] = true;
+        });
+      }
+      $.each(result.auth.devices, function(index, device) {
+        var $item = $('<label/>').addClass('item')
+          , checked = selected[device.iden] ? 'CHECKED' : '';
+        $item.html(device.nickname + ' <input type="checkbox" ' + checked + ' value="' + device.iden + '" class="item-checkbox">');
+        $deviceList.append($item);
+      });
+      $('.item-checkbox').itemCheckbox();
+    }
+  };
+};
 
 var MapView = function(domId) {
   this.zoom = 10;
@@ -251,14 +293,7 @@ Zepto(function() {
     $('input[name=' + integration.getName() + 'Enabled]').on('change', function() {
       var $container = $('.' + integration.getName());
       if (this.checked) {
-        integration.login(function(data, code, xhr) {
-          if (xhr.status == 200) {
-            $container
-              .show()
-              .find('.' + integration.getName() + "Authorize")
-              .attr('href', integration.authorize(data));
-          }
-        });
+        integration.login($container);
       } else {
         $container.hide();
       }
@@ -308,6 +343,7 @@ Zepto(function() {
       range: $('[name=range]:checked').val(),
       region: $('[name=region]:checked').val(),
       longClicks: {},
+      integrations: {},
       distance: parseInt($('.item-input[name=distance]').val()),
       maxresults: parseInt($('.item-input[name=maxresults]').val())
     };
@@ -316,6 +352,9 @@ Zepto(function() {
     });
     integrations.forEach(function(integration) {
       config.integrations[integration.getName()] = $('input[name=' + integration.getName() + 'Enabled]').prop('checked');
+      if (config.integrations[integration.getName()]) {
+        config[integration.getName()] = integration.getResults();
+      }
     });
     if (map) {
       var center = map.selfCircle.getCenter();
