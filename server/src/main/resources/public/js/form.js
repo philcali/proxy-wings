@@ -12,9 +12,88 @@ var OCMViewer = function(config) {
 OCMViewer.prototype.getStations = function(coords, callback) {
   this.config.latitude = coords.lat;
   this.config.longitude = coords.lng;
-  $.getJSON(this.baseUrl, this.config, function(stations) {
-    stations.forEach(callback);
+  $.ajax({
+    url: this.baseUrl,
+    data: this.config,
+    type: 'GET',
+    dataType: 'jsonp',
+    success: function(stations) {
+      stations.forEach(callback);
+    }
   });
+};
+
+var Integrations = function() {
+  var integrations = [ new Pushbullet() ];
+  return {
+    forEach: function(callback) {
+      integrations.forEach(callback);
+    }
+  };
+};
+var Integration = function(name) {
+  this.name = name;
+};
+Integration.prototype.getName = function() {
+  return this.name;
+};
+Integration.prototype.login = function($container) {
+  $.ajax({
+    url: '/' + this.getName() + "/login" + location.search,
+    type: 'GET',
+    success: this._loginAttempt($container)
+  });
+};
+Integration.prototype.authorize = function(baseUrl) {
+  return baseUrl + encodeURIComponent(this.getRedirectUrl());
+};
+Integration.prototype.getRedirectUrl = function() {
+  return [
+    window.location.protocol + "//",
+    location.host,
+    "/" + this.getName() + "/auth",
+    location.search + "&options=" + location.hash.replace("#", "")
+  ].join('');
+};
+var Pushbullet = function() {
+  this.name = 'pushbullet';
+  this.devices = $('.pushbullet-devices');
+};
+Pushbullet.prototype = Object.create(Integration.prototype);
+Pushbullet.prototype.getResults = function() {
+  var selected = [];
+  this.devices.find('.item-checkbox:checked').each(function() {
+    selected.push(this.value);
+  });
+  return {
+    devices: selected
+  };
+};
+Pushbullet.prototype._loginAttempt = function($container) {
+  var integration = this;
+  return function(result) {
+    if (!result.isAuthed) {
+      $container
+        .show()
+        .find('.' + integration.getName() + "Authorize")
+        .attr('href', integration.authorize(result.authorizeUrl));
+    } else {
+      var $deviceList = integration.devices.show().find('.item-container-content')
+        , selected = {};
+      if (data.pushbullet) {
+        $.each(data.pushbullet.devices, function(index, device) {
+          selected[device] = true;
+        });
+      }
+      $.each(result.auth.devices, function(index, device) {
+        var $item = $('<label/>').addClass('item')
+          , checked = selected[device.iden] ? 'CHECKED' : '';
+        $item.html(device.nickname + ' <input type="checkbox" ' + checked + ' value="' + device.iden + '" class="item-checkbox">');
+        $deviceList.append($item);
+      });
+      $('.item-checkbox').itemCheckbox();
+    }
+  };
 };
 
 var MapView = function(domId) {
@@ -185,7 +264,20 @@ function initMap() {
 }
 
 Zepto(function() {
-  var longClicks = ['up', 'select', 'down'];
+  var longClicks = ['up', 'select', 'down']
+    , integrations = new Integrations()
+    , queryParams = (function(search) {
+        var keyValues = search.replace('?', '')
+          , params = {};
+        keyValues.split('&').forEach(function(keyValue) {
+          var parts = keyValue.split('=');
+          params[parts[0]] = '';
+          if (parts.length > 1) {
+            params[parts[0]] = decodeURIComponent(parts[1]);
+          }
+        });
+        return params;
+      })(location.search);
   $('[name=distance]').on('change', function(e) {
     map.setDistance(this.value);
   });
@@ -196,6 +288,21 @@ Zepto(function() {
   });
   $('[name=maxresults]').on('change', function(e) {
     map.setMaxResults(this.value);
+  });
+  integrations.forEach(function(integration) {
+    $('input[name=' + integration.getName() + 'Enabled]').on('change', function() {
+      var $container = $('.' + integration.getName());
+      if (this.checked) {
+        integration.login($container);
+      } else {
+        $container.hide();
+      }
+    });
+    if (queryParams[integration.getName()]) {
+      $('input[name=' + integration.getName() + 'Enabled]')
+        .prop('checked', true)
+        .trigger('change');
+    }
   });
   if (data.username && data.password) {
     $('#username').val(data.username);
@@ -217,6 +324,14 @@ Zepto(function() {
         $('select[name=' + button + 'LongClick]').val(data.longClicks[button]);
       });
     }
+    if (data.integrations) {
+      integrations.forEach(function(integration) {
+        var checked = data.integrations[integration.getName()] || false;
+        $('input[name=' + integration.getName() + 'Enabled]')
+          .prop('checked', checked)
+          .trigger('changed');
+      });
+    }
   } else {
     $('input[value=us]').prop('checked', true);
     $('input[value=mi]').prop('checked', true);
@@ -228,11 +343,18 @@ Zepto(function() {
       range: $('[name=range]:checked').val(),
       region: $('[name=region]:checked').val(),
       longClicks: {},
+      integrations: {},
       distance: parseInt($('.item-input[name=distance]').val()),
       maxresults: parseInt($('.item-input[name=maxresults]').val())
     };
     longClicks.forEach(function(button) {
       config.longClicks[button] = $('select[name=' + button + 'LongClick]').val();
+    });
+    integrations.forEach(function(integration) {
+      config.integrations[integration.getName()] = $('input[name=' + integration.getName() + 'Enabled]').prop('checked');
+      if (config.integrations[integration.getName()]) {
+        config[integration.getName()] = integration.getResults();
+      }
     });
     if (map) {
       var center = map.selfCircle.getCenter();
@@ -243,7 +365,6 @@ Zepto(function() {
         }
       };
     }
-
     location.href = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(config));
     return false;
   });
