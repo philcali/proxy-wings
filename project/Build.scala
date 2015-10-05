@@ -6,7 +6,7 @@ import AssemblyKeys._
 object Build extends sbt.Build {
   override lazy val settings = super.settings ++ Seq(
     organization := "philcali.github.com",
-    version := "1.3.1",
+    version := "1.3.2",
     scalaVersion := "2.11.5",
     scalacOptions ++= Seq("-feature", "-deprecation")
   )
