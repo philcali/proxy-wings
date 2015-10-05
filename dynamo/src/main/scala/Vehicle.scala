@@ -48,6 +48,6 @@ case class TimeToChargeModel(item: Item) extends TimeToCharge {
 }
 
 case class RangeModel(item: Item) extends Range {
-  lazy val acOn = item.getInt("acOn")
-  lazy val acOff = item.getInt("acOff")
+  lazy val acOn = item.getDouble("acOn")
+  lazy val acOff = item.getDouble("acOff")
 }
