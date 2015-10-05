@@ -42,31 +42,32 @@ trait Api {
           case push =>
           logins.read(push.accountId).map({
             case token =>
-            token.devices.find(_.iden == push.deviceIden).map({
-              case device =>
-              val latitude = push.coords("latitude")
-              val longitude = push.coords("longitude")
-              PushBulletCreatePush(
-                title = push.title,
-                body = push.body,
-                url = Some(mapsPrefix + latitude + "," + longitude),
-                receiver = token.user,
-                sender = token.user,
-                receiverDevice = device,
-                senderDevice = device
-              )
-            }).map({
-              case push =>
-              client.push(push).apply()
-              NoContent
-            }).orElse({
-              Some(BadRequest ~> ResponseString("Invalid device"))
-            }).get
+            push.devices.foreach(deviceIden => {
+              token.devices.find(_.iden == deviceIden).foreach({
+                case device =>
+                val latitude = push.coords("latitude")
+                val longitude = push.coords("longitude")
+                client.push(PushBulletCreatePush(
+                  title = push.title,
+                  body = push.body,
+                  url = Some(mapsPrefix + latitude + "," + longitude),
+                  receiver = token.user,
+                  sender = token.user,
+                  receiverDevice = device,
+                  senderDevice = device
+                ))
+              })
+            })
+            NoContent
           }).orElse({
-            Some(NotFound)
+            Some(NotFound ~>
+              JsonContent ~>
+              ResponseString("""{"message":"Invalid account","code":404}"""))
           }).get
         }).orElse({
-          Some(BadRequest ~> ResponseString("Bad JSON"))
+          Some(BadRequest ~>
+            JsonContent ~>
+            ResponseString("""{"message":"Bad JSON","code":400}"""))
         }).get
       }
       case "auth" =>
