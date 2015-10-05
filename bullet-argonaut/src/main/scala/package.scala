@@ -58,9 +58,9 @@ package object json {
       accountId <- (p --\ "accountId").as[String]
       title <- (p --\ "title").as[String]
       body <- (p --\ "body").as[String]
-      deviceIden <- (p --\ "deviceIden").as[String]
+      devices <- (p --\ "devices").as[List[String]]
       coords <- (p --\ "coords").as[Map[String, Double]]
-    } yield PushBulletApiPush(accountId, title, body, deviceIden, coords))
+    } yield PushBulletApiPush(accountId, title, body, devices, coords))
 
   implicit def PushBulletTokenJson: DecodeJson[PushBulletToken] =
     DecodeJson(p => for {

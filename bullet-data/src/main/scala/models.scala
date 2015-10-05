@@ -42,7 +42,7 @@ case class PushBulletApiPush(
   accountId: String,
   title: String,
   body: String,
-  deviceIden: String,
+  devices: List[String],
   coords: Map[String, Double]
 )
 
