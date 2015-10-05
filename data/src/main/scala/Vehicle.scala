@@ -36,6 +36,6 @@ trait TimeToCharge {
 }
 
 trait Range {
-  def acOn: Int
-  def acOff: Int
+  def acOn: Double
+  def acOff: Double
 }

@@ -46,6 +46,6 @@ case class TimeToChargeNode(node: xml.NodeSeq) extends TimeToCharge {
 }
 
 case class RangeNode(node: xml.NodeSeq) extends Range {
-  lazy val acOn = (node \ "CruisingRangeAcOn" text).toInt
-  lazy val acOff = (node \ "CruisingRangeAcOff" text).toInt
+  lazy val acOn = (node \ "CruisingRangeAcOn" text).toDouble
+  lazy val acOff = (node \ "CruisingRangeAcOff" text).toDouble
 }
